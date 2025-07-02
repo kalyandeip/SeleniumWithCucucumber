@@ -15,8 +15,8 @@ COPY src/ ./src/
 RUN chmod +x mvnw
 
 # 4. Pre-download dependencies (speed up rebuilds)
-RUN --mount=type=cache,target=/root/.m2 \
-    ./mvnw dependency:go-offline -B
+RUN ./mvnw dependency:go-offline -B
+
 
 # 5. Build the app (skip tests)
 RUN --mount=type=cache,target=/root/.m2 \
