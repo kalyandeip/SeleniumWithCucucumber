@@ -10,9 +10,6 @@ RUN mvn dependency:go-offline -B
 # Copy source and test files
 COPY src ./src
 
-# Copy testng.xml if you use it
-COPY testng.xml ./src/test/java/
-
 # Build
 RUN mvn clean package -DskipTests
 
