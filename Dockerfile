@@ -1,33 +1,29 @@
-# syntax=docker/dockerfile:1.4
-
-### 🛠️ 1. Build Stage: Compile and Package the Java Project
+# Stage 1: Build the project with Maven
 FROM maven:3.8.8-openjdk-11-slim AS builder
 
 WORKDIR /app
 
-# Copy Maven configuration and source files
+# Copy Maven files first to leverage caching
 COPY pom.xml .
 COPY mvnw .
 COPY .mvn/ .mvn/
 
-# Optional: Preload dependencies (avoids redownloading every build)
+# Pre-download dependencies
 RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
 
-# Now copy the actual source
+# Copy the rest of the source code
 COPY src ./src
 COPY testng.xml ./src/test/java/
 
-# Package the project, skipping tests (remove -DskipTests to include them)
+# Build the application
 RUN ./mvnw clean package -DskipTests
 
----
-
-### ☕ 2. Runtime Stage: Run only the jar with minimal Java image
+# Stage 2: Run the built jar with minimal image
 FROM openjdk:11-jre-slim
 
 WORKDIR /app
 
-# Copy the built jar from the builder stage
+# Copy the built jar file from the builder stage
 COPY --from=builder /app/target/*.jar app.jar
 
 # Default command to run the jar
