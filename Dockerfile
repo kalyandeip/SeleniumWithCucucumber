@@ -1,30 +1,30 @@
 # Stage 1: Build the project with Maven
-FROM maven:3.8.8-openjdk-11-slim AS builder
+FROM maven:3.8.8-eclipse-temurin-11 AS builder
 
 WORKDIR /app
 
-# Copy Maven files first to leverage caching
+# Copy Maven wrapper and config first
 COPY pom.xml .
 COPY mvnw .
 COPY .mvn/ .mvn/
 
-# Pre-download dependencies
+# Preload dependencies
 RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
 
-# Copy the rest of the source code
+# Copy the actual source code
 COPY src ./src
 COPY testng.xml ./src/test/java/
 
 # Build the application
 RUN ./mvnw clean package -DskipTests
 
-# Stage 2: Run the built jar with minimal image
-FROM openjdk:11-jre-slim
+# Stage 2: Runtime environment
+FROM eclipse-temurin:11-jre
 
 WORKDIR /app
 
-# Copy the built jar file from the builder stage
+# Copy the built jar from the builder
 COPY --from=builder /app/target/*.jar app.jar
 
-# Default command to run the jar
+# Run the app
 ENTRYPOINT ["java", "-jar", "app.jar"]
