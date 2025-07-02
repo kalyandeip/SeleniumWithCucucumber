@@ -1,38 +1,34 @@
-# syntax=docker/dockerfile:1
-################################################################################
-# Stage 1: Build app and generate Maven wrapper
-FROM maven:3.8.1-openjdk-11-slim AS builder
+# syntax=docker/dockerfile:1.4
+
+### 🛠️ 1. Build Stage: Compile and Package the Java Project
+FROM maven:3.8.8-openjdk-11-slim AS builder
+
 WORKDIR /app
 
-# 1. Generate Maven Wrapper inside the container
-RUN mvn -N io.takari:maven:wrapper
+# Copy Maven configuration and source files
+COPY pom.xml .
+COPY mvnw .
+COPY .mvn/ .mvn/
 
-# 2. Copy project POM and source code (wrapper auto‑generated earlier)
-COPY pom.xml ./
-COPY src/ ./src/
+# Optional: Preload dependencies (avoids redownloading every build)
+RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
 
-# 3. Make wrapper executable
-RUN chmod +x mvnw
+# Now copy the actual source
+COPY src ./src
+COPY testng.xml ./src/test/java/
 
-# 4. Pre-download dependencies (speed up rebuilds)
-RUN ./mvnw dependency:go-offline -B
+# Package the project, skipping tests (remove -DskipTests to include them)
+RUN ./mvnw clean package -DskipTests
 
+---
 
-# 5. Build the app (skip tests)
-RUN --mount=type=cache,target=/root/.m2 \
-    ./mvnw clean package -DskipTests -B
-
-################################################################################
-# Stage 2: Final runtime image (lean)
+### ☕ 2. Runtime Stage: Run only the jar with minimal Java image
 FROM openjdk:11-jre-slim
+
 WORKDIR /app
 
-# Copy the generated jar
+# Copy the built jar from the builder stage
 COPY --from=builder /app/target/*.jar app.jar
 
-# Run as non‑root user for better security
-RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
-USER appuser
-
-EXPOSE 8080
+# Default command to run the jar
 ENTRYPOINT ["java", "-jar", "app.jar"]
