@@ -8,7 +8,7 @@ WORKDIR /app
 RUN mvn -N io.takari:maven:wrapper
 
 # 2. Copy project POM and source code (wrapper auto‑generated earlier)
-COPY pom.xml .mvn/ mvnw mvnw.cmd ./
+COPY pom.xml ./
 COPY src/ ./src/
 
 # 3. Make wrapper executable
