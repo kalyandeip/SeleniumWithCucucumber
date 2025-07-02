@@ -1,25 +1,22 @@
-# Stage 1: Build
+# === Stage 1: Build ===
 FROM maven:3.8.8-eclipse-temurin-11 AS builder
 
 WORKDIR /app
 
-# Copy pom and preload dependencies
+# Copy Maven build files
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
-
-# Copy source and test files
 COPY src ./src
 
-# Build
-RUN mvn clean package -DskipTests
+# Build the application without running tests
+RUN mvn clean compile -DskipTests
 
-# Stage 2: Runtime
+# === Stage 2: Runtime ===
 FROM eclipse-temurin:11-jre
 
 WORKDIR /app
 
-# Copy the JAR file
-COPY --from=builder /app/target/*.jar app.jar
+# Copy compiled classes from builder stage
+COPY --from=builder /app/target /app/target
 
-# Run the app
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Optional: Set default command
+CMD ["java", "-cp", "/app/target/classes", "your.main.ClassName"]
