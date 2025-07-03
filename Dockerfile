@@ -1,14 +1,16 @@
-# Base image with Maven and JDK 17 (Eclipse Temurin)
+# Use Maven + JDK 17 image that includes javac
 FROM maven:3.9.4-eclipse-temurin-17
 
-# Set environment variables
+# Set non-interactive mode for apt-get
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install required system dependencies including browsers and drivers
+# Install required packages including browsers
 RUN apt-get update && apt-get install -y \
     software-properties-common \
     wget \
     unzip \
+    chromium-browser \
+    firefox \
     fonts-liberation \
     libnss3 \
     libxss1 \
@@ -22,29 +24,24 @@ RUN apt-get update && apt-get install -y \
     libxdamage1 \
     libxrandr2 \
     xdg-utils \
-    chromium-browser \
-    firefox \
     && rm -rf /var/lib/apt/lists/*
 
 # Install ChromeDriver
-RUN CHROMEDRIVER_VERSION=$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE) && \
-    wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip" && \
-    unzip /tmp/chromedriver.zip -d /usr/local/bin/ && \
+RUN CHROMEDRIVER_VERSION=$(curl -sSL https://chromedriver.storage.googleapis.com/LATEST_RELEASE) && \
+    wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip && \
+    unzip /tmp/chromedriver.zip -d /usr/local/bin && \
     chmod +x /usr/local/bin/chromedriver && \
     rm /tmp/chromedriver.zip
 
 # Install GeckoDriver
-RUN GECKODRIVER_VERSION=v0.33.0 && \
-    wget -O /tmp/geckodriver.tar.gz "https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-linux64.tar.gz" && \
-    tar -xzf /tmp/geckodriver.tar.gz -C /usr/local/bin/ && \
+RUN GECKODRIVER_VERSION="v0.33.0" && \
+    wget -O /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/geckodriver-${GECKODRIVER_VERSION}-linux64.tar.gz && \
+    tar -xzf /tmp/geckodriver.tar.gz -C /usr/local/bin && \
     chmod +x /usr/local/bin/geckodriver && \
     rm /tmp/geckodriver.tar.gz
 
-# Default workdir inside container
+# Set working directory
 WORKDIR /app
 
-# Copy the source code into container (if needed)
-# COPY . /app
-
-# Run Maven clean and compile when container is started (optional override in Jenkinsfile)
-# CMD ["mvn", "clean", "compile"]
+# Default command (can be overridden in Jenkinsfile)
+CMD ["mvn", "-version"]
