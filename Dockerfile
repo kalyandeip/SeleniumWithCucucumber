@@ -1,21 +1,18 @@
 FROM ubuntu:20.04
 
-# Avoid interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install core utilities and clean up
+# Install core utilities
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        software-properties-common \
         wget \
         unzip \
+        software-properties-common \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install browser dependencies in a separate layer
+# Install minimal browser dependencies in smaller layers
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        chromium-browser \
-        firefox \
         fonts-liberation \
         libnss3 \
         libxss1 \
@@ -30,3 +27,13 @@ RUN apt-get update && \
         libxrandr2 \
         xdg-utils \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# 🧪 Optional: Headless Firefox using ESR
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends firefox-esr || true && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# 🧪 Optional: Use Chromium in headless mode
+# RUN apt-get update && \
+#     apt-get install -y chromium-browser chromium-chromedriver && \
+#     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
